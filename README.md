@@ -2,7 +2,7 @@
 
 物业与租户综合账单管理系统，支持账号登录、MySQL 数据库存储、Docker 一键部署。
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/juntiy/property-billing-system)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/qq-im/property-billing-system)
 
 > 点击上方按钮可一键部署到 Render（免费），但需要先 fork/复制代码到你自己的 GitHub 仓库。
 
