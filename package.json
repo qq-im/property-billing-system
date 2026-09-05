@@ -1,0 +1,20 @@
+{
+  "name": "property-billing-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "物业与租户综合账单管理系统（Node.js + MySQL/SQLite）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.24.3",
+    "sqlite3": "^6.0.1"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+.env
+.npm-cache/
+data/*.json
+data/*.tmp
+data/*.db
+*.log
+.DS_Store
+*.zip

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物业账单管家 - 物业与租户综合账单管理系统</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/util.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <div class="mask" id="sidebarMask"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">¥</div>
+        <div>
+          <div class="brand-name">物业账单管家</div>
+          <div class="brand-sub">租户 · 水电 · 账单</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="nav-item" href="#/dashboard" data-view="dashboard">
+          <span class="nav-ico">◧</span><span>工作台</span>
+        </a>
+        <a class="nav-item" href="#/tenants" data-view="tenants">
+          <span class="nav-ico">▤</span><span>租户管理</span>
+        </a>
+        <a class="nav-item" href="#/readings" data-view="readings">
+          <span class="nav-ico">✎</span><span>抄表录入</span>
+        </a>
+        <a class="nav-item" href="#/bills" data-view="bills">
+          <span class="nav-ico">▦</span><span>账单生成</span>
+        </a>
+        <a class="nav-item" href="#/import" data-view="import">
+          <span class="nav-ico">⇪</span><span>Excel 导入</span>
+        </a>
+        <a class="nav-item" href="#/settings" data-view="settings">
+          <span class="nav-ico">⚙</span><span>公司设置</span>
+        </a>
+      </nav>
+      <div class="sidebar-foot">v2.0.0 · 服务器版</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" title="菜单">☰</button>
+        <h1 class="page-title" id="pageTitle">工作台</h1>
+        <div class="topbar-right" id="topbarRight">
+          <div class="user-menu" id="userMenu" style="display:none">
+            <span id="currentUser">管理员</span>
+            <button class="btn btn-sm btn-ghost" onclick="App.logout()">退出登录</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="view" id="view-dashboard"></section>
+      <section class="view hidden" id="view-tenants"></section>
+      <section class="view hidden" id="view-readings"></section>
+      <section class="view hidden" id="view-bills"></section>
+      <section class="view hidden" id="view-import"></section>
+      <section class="view hidden" id="view-settings"></section>
+    </main>
+  </div>
+
+  <div id="toastBox"></div>
+
+  <!-- 租户编辑弹窗 -->
+  <div class="modal-mask hidden" id="tenantModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="tenantModalTitle">新增租户</h3>
+        <button class="icon-btn" onclick="App.closeTenantEditor()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label class="field">
+            <span>租户姓名 / 公司名称 <b>*</b></span>
+            <input class="inp" id="te-name" maxlength="60" placeholder="如：张三 / 某某商贸有限公司">
+          </label>
+          <label class="field">
+            <span>位置/房号 / 铺位号</span>
+            <input class="inp" id="te-room" maxlength="60" placeholder="如：A座101 / 3栋2-05">
+          </label>
+          <label class="field">
+            <span>联系电话</span>
+            <input class="inp" id="te-phone" maxlength="30" placeholder="手机或固话">
+          </label>
+          <div class="field-pair">
+            <label class="field">
+              <span>合同开始</span>
+              <input class="inp" id="te-start" type="date">
+            </label>
+            <label class="field">
+              <span>合同结束</span>
+              <input class="inp" id="te-end" type="date">
+            </label>
+          </div>
+        </div>
+
+        <div class="block-title">固定费用（元/月，填 0 表示不收取）</div>
+        <div class="form-grid three">
+          <label class="field">
+            <span>月租金（元/月）</span>
+            <input class="inp" id="te-rent" type="number" min="0" step="0.01" placeholder="0.00">
+          </label>
+          <label class="field">
+            <span>停车费（元/月）</span>
+            <input class="inp" id="te-parking" type="number" min="0" step="0.01" placeholder="0.00">
+          </label>
+          <label class="field">
+            <span>垃圾清运费（元/月）</span>
+            <input class="inp" id="te-garbage" type="number" min="0" step="0.01" placeholder="0.00">
+          </label>
+        </div>
+
+        <div class="block-title">
+          计量表计（支持一户绑定多个水表 / 电表）
+          <button class="btn btn-sm btn-primary" onclick="App.addMeterRow()">+ 添加表计</button>
+        </div>
+        <div id="meterRows"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="App.closeTenantEditor()">取消</button>
+        <button class="btn btn-primary" onclick="App.saveTenant()">保存租户</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

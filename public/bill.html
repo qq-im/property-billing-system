@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缴费通知单</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="/js/util.js"></script>
+  <style id="billStyle">
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", "SimSun", sans-serif;
+      background: #e2e8f0;
+      color: #1e293b;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 12px 18px;
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 1px 6px rgba(15,23,42,.06);
+    }
+    .toolbar .tip { color: #64748b; font-size: 12.5px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      background: #fff;
+      font-size: 13.5px;
+      cursor: pointer;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: #4f46e5; color: #4f46e5; }
+    .btn-primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .btn-primary:hover { background: #4338ca; color: #fff; }
+
+    /* ---------- A4 账单 ---------- */
+    .bill {
+      position: relative;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 18px auto;
+      padding: 13mm 15mm 12mm;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(15,23,42,.18);
+      border-radius: 2px;
+    }
+
+    .bill-head { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 10px; }
+    .company { font-size: 15px; font-weight: 700; letter-spacing: 3px; color: #0f172a; }
+    .doc-title { font-size: 27px; font-weight: 800; letter-spacing: 8px; margin-top: 6px; color: #1e293b; }
+    .doc-sub { font-size: 12px; color: #dc2626; letter-spacing: 4px; margin-top: 2px; }
+    .doc-meta {
+      display: flex; justify-content: center; gap: 22px;
+      font-size: 11.5px; color: #64748b; margin-top: 8px;
+    }
+
+    .tenant-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 18px;
+      margin: 12px 0 16px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 12.5px;
+    }
+    .tenant-bar label { color: #64748b; margin-right: 8px; }
+    .tenant-bar b { font-weight: 600; }
+
+    .section-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      border-left: 4px solid #4f46e5;
+      padding-left: 8px;
+      margin: 18px 0 8px;
+    }
+
+    .bill-tbl { width: 100%; border-collapse: collapse; }
+    .bill-tbl th, .bill-tbl td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 9px;
+      font-size: 12.5px;
+      text-align: left;
+    }
+    .bill-tbl th { background: #f1f5f9; font-weight: 600; color: #334155; white-space: nowrap; }
+    .bill-tbl td.num, .bill-tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .bill-tbl td.center, .bill-tbl th.center { text-align: center; }
+    .bill-tbl .sub { font-size: 11px; color: #64748b; }
+    .bill-tbl .empty-cell { color: #94a3b8; }
+
+    .meter-tbl th, .meter-tbl td { font-size: 11.8px; padding: 5px 6px; }
+
+    .bill-notes { margin-top: 8px; font-size: 11.5px; color: #dc2626; }
+    .bill-notes div { padding: 2px 0; }
+
+    .summary-box {
+      margin-top: 16px;
+      border: 1.5px solid #1e293b;
+      border-radius: 4px;
+      padding: 12px 14px;
+      background: #fbfdff;
+    }
+    .summary-sub {
+      display: flex; gap: 24px;
+      font-size: 12px; color: #475569;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed #cbd5e1;
+    }
+    .summary-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 8px; gap: 12px;
+    }
+    .sum-cn { font-size: 14px; }
+    .sum-cn b { color: #dc2626; font-size: 15px; letter-spacing: 1px; }
+    .sum-num { font-size: 26px; font-weight: 800; color: #dc2626; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .pay-tbl { width: 100%; border-collapse: collapse; }
+    .pay-tbl td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 10px;
+      font-size: 12.5px;
+      vertical-align: middle;
+    }
+    .pay-tbl .pay-label { width: 90px; background: #f8fafc; font-weight: 600; color: #334155; white-space: nowrap; }
+    .pay-tbl .qr-cell { padding: 6px 10px; }
+    .qr-row { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+    .qr-item { text-align: center; }
+    .qr-caption { font-size: 11.5px; color: #475569; margin-bottom: 4px; }
+    .pay-tbl img.qr { width: 34mm; height: 34mm; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 3px; }
+    .pay-tbl .qr-empty { color: #94a3b8; }
+
+    .reminder {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #92400e;
+    }
+
+    .sign-area {
+      margin-top: 26px;
+      text-align: right;
+      font-size: 12.5px;
+      line-height: 1.8;
+      color: #334155;
+    }
+
+    .seal {
+      position: absolute;
+      right: 27mm;
+      bottom: 34mm;
+      width: 32mm;
+      height: 32mm;
+      object-fit: contain;
+      opacity: .95;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    .bill-footer {
+      position: absolute;
+      left: 0; right: 0; bottom: 8mm;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .loading, .error {
+      max-width: 640px;
+      margin: 60px auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(15,23,42,.12);
+    }
+    .error { color: #dc2626; }
+
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: #fff; }
+      .toolbar { display: none !important; }
+      .bill { width: 210mm; min-height: 297mm; margin: 0; box-shadow: none; border-radius: 0; }
+    }
+
+    @media (max-width: 900px) {
+      .bill { width: 100%; min-height: auto; margin: 0; padding: 8mm 6mm; box-shadow: none; }
+      .bill-tbl th, .bill-tbl td { font-size: 11px; padding: 4px 5px; }
+      .meter-tbl { font-size: 10.5px; }
+      .sum-num { font-size: 20px; }
+      .seal { right: 10mm; bottom: 26mm; width: 24mm; height: 24mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" onclick="window.close()">← 返回</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨 打印 / 导出 PDF</button>
+    <button class="btn" onclick="exportPNG()">🖼 导出图片 (PNG)</button>
+    <button class="btn" onclick="copyBillText()">📋 复制催款文本</button>
+    <span class="tip">提示：微信发送时建议使用「导出图片」或「复制催款文本」。</span>
+  </div>
+  <div id="root"><div class="loading">正在生成账单…</div></div>
+
+  <script>
+    'use strict';
+
+    const params = new URLSearchParams(location.search);
+    const tenantId = params.get('tenantId') || '';
+    const month = params.get('month') || '';
+    let billData = null;
+
+    async function load() {
+      const root = document.getElementById('root');
+      if (!tenantId || !month) {
+        root.innerHTML = '<div class="error">缺少参数：请从管理端「账单生成」页面打开本账单。</div>';
+        return;
+      }
+      try {
+        const r = await fetch('/api/bill?tenantId=' + encodeURIComponent(tenantId) +
+          '&month=' + encodeURIComponent(month));
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || '账单生成失败');
+        billData = data;
+        renderBill(data);
+        document.title = data.tenant.name + ' ' + data.monthCn + ' 缴费通知单';
+        if (params.get('print') === '1') {
+          setTimeout(() => window.print(), 500);
+        }
+      } catch (e) {
+        root.innerHTML = '<div class="error">账单生成失败：' + esc(e.message) + '</div>';
+      }
+    }
+
+    function meterTypeCn(type) {
+      return type === 'water' ? '水表' : '电表';
+    }
+
+    function renderBill(d) {
+      const s = d.settings, t = d.tenant;
+      const fixedRows = d.fixedFees.length
+        ? d.fixedFees.map((f, i) =>
+            '<tr><td class="center">' + (i + 1) + '</td><td>' + esc(f.name) + '</td>' +
+            '<td>' + esc(f.unit) + '</td><td class="num">' + fmtMoney(f.amount) + '</td></tr>'
+          ).join('')
+        : '<tr><td colspan="4" class="empty-cell center">本期无固定费用</td></tr>';
+
+      const meterRows = d.meterRows.length
+        ? d.meterRows.map((m) => {
+            const prevSrc = m.prevMonth
+              ? '<div class="sub">' + fmtNum(m.prev) + '（' + m.prevMonth + '期末）</div>'
+              : '<div class="sub">0（首次，期初按 0）</div>';
+            const current = m.recorded
+              ? fmtNum(m.current)
+              : '<span class="empty-cell">未录入</span>';
+            const usage = m.usage != null
+              ? fmtNum(m.usage) + ' ' + m.unit
+              : '<span class="empty-cell">—</span>';
+            const amount = m.amount != null
+              ? fmtMoney(m.amount)
+              : '<span class="empty-cell">—</span>';
+            return '<tr>' +
+              '<td class="center">' + m.seq + '</td>' +
+              '<td><b>' + esc(m.meterName) + '</b></td>' +
+              '<td class="center">' + meterTypeCn(m.type) + '</td>' +
+              '<td class="center">' + esc(m.time || '—') + '</td>' +
+              '<td class="num">' + fmtNum(m.prev) + prevSrc + '</td>' +
+              '<td class="num">' + current + '</td>' +
+              '<td class="num">' + usage + '</td>' +
+              '<td class="num">' + fmtMoney(m.price) + ' 元/' + m.unit + '</td>' +
+              '<td class="num">' + amount + '</td>' +
+              '</tr>';
+          }).join('')
+        : '<tr><td colspan="9" class="empty-cell center">该租户未绑定任何表计</td></tr>';
+
+      const notes = d.notes && d.notes.length
+        ? '<div class="bill-notes">' + d.notes.map((n) => '<div>⚠ ' + esc(n) + '</div>').join('') + '</div>'
+        : '';
+
+      const qrItem = (label, src) =>
+        '<div class="qr-item"><div class="qr-caption">' + label + '</div>' +
+        (src
+          ? '<img class="qr" src="' + src + '" alt="' + label + '">'
+          : '<div class="qr-empty">未配置</div>') +
+        '</div>';
+
+      const seal = s.sealImage
+        ? '<img class="seal" src="' + s.sealImage + '" alt="电子公章">'
+        : '';
+
+      document.getElementById('root').innerHTML =
+        '<div class="bill" id="bill">' +
+
+          '<div class="bill-head">' +
+            '<div class="company">' + esc(s.companyName) + '</div>' +
+            '<div class="doc-title">缴 费 通 知 单</div>' +
+            '<div class="doc-sub">（催 款 单）</div>' +
+            '<div class="doc-meta">' +
+              '<span>账单编号：' + esc(d.no) + '</span>' +
+              '<span>账单月份：' + esc(d.monthCn) + '</span>' +
+              '<span>生成时间：' + esc(d.generatedAt) + '</span>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="tenant-bar">' +
+            '<div><label>租户名称</label><b>' + esc(t.name) + '</b></div>' +
+            '<div><label>位置/房号 / 铺位</label><b>' + esc(t.room || '—') + '</b></div>' +
+            '<div><label>联系电话</label><b>' + esc(t.phone || '—') + '</b></div>' +
+            '<div><label>合同期间</label><b>' + (t.contractStart || '—') + ' 至 ' + (t.contractEnd || '—') + '</b></div>' +
+          '</div>' +
+
+          '<div class="section-title">一、固定费用明细（元/月）</div>' +
+          '<table class="bill-tbl"><thead><tr>' +
+            '<th class="center">序号</th><th>费用项目</th><th>收费标准</th><th class="num">本期金额（元）</th>' +
+          '</tr></thead><tbody>' + fixedRows + '</tbody></table>' +
+
+          '<div class="section-title">二、水 / 电费抄表明细</div>' +
+          '<table class="bill-tbl meter-tbl"><thead><tr>' +
+            '<th class="center">序号</th><th>表计名称 / 编号</th><th class="center">类型</th>' +
+            '<th class="center">抄表时间</th><th class="num">上月期初读数</th><th class="num">本期期末读数</th>' +
+            '<th class="num">实际用量（度/吨）</th><th class="num">单价（元/单位）</th><th class="num">费用小计（元）</th>' +
+          '</tr></thead><tbody>' + meterRows + '</tbody></table>' + notes +
+
+          '<div class="summary-box">' +
+            '<div class="summary-sub">' +
+              '<span>固定费用合计：<b>¥ ' + fmtMoney(d.fixedTotal) + '</b></span>' +
+              '<span>水 / 电费合计：<b>¥ ' + fmtMoney(d.meterTotal) + '</b></span>' +
+            '</div>' +
+            '<div class="summary-row">' +
+              '<div class="sum-cn">本期应缴总金额（大写）：<b>' + esc(d.totalCn) + '</b></div>' +
+              '<div class="sum-num">¥ ' + fmtMoney(d.total) + '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="section-title">三、付款指引</div>' +
+          '<table class="pay-tbl">' +
+            '<tr><td class="pay-label">收款账户</td><td><b>' + esc(s.accountHolder) + '</b>（' + esc(s.bankName) + '）　账号：<b>' + esc(s.bankAccount) + '</b></td></tr>' +
+            '<tr><td class="pay-label">收款码</td><td class="qr-cell"><div class="qr-row">' +
+              qrItem('微信收款码', s.wechatQr) + qrItem('支付宝收款码', s.alipayQr) +
+            '</div></td></tr>' +
+            '<tr><td class="pay-label">付款截止日期</td><td><b style="color:#dc2626;font-size:14px">' + esc(d.dueDate) + '</b></td></tr>' +
+          '</table>' +
+          '<div class="reminder">' + esc(s.reminderNote) + '</div>' +
+
+          '<div class="sign-area">' +
+            '<div>' + esc(s.companyName) + ' 物业服务中心</div>' +
+            '<div>联系电话：' + esc(s.phone) + '</div>' +
+            '<div>出具日期：' + esc(d.generatedDate) + '</div>' +
+          '</div>' +
+          seal +
+          '<div class="bill-footer">' + esc(s.footerNote) + '</div>' +
+        '</div>';
+      document.body.dataset.ready = '1';
+    }
+
+    /* ---------- 导出图片（SVG foreignObject → Canvas → PNG，无需任何依赖） ---------- */
+    async function renderBillToCanvas() {
+      const bill = document.getElementById('bill');
+      if (!bill) throw new Error('账单尚未渲染');
+
+      // 1. 等待页面内二维码 / 公章等图片全部加载完成
+      const imgs = Array.from(bill.querySelectorAll('img'));
+      await Promise.all(imgs.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.addEventListener('load', () => resolve(), { once: true });
+          img.addEventListener('error', () => resolve(), { once: true });
+          setTimeout(resolve, 3000);
+        });
+      }));
+      try { await document.fonts.ready; } catch (e) { /* 忽略字体加载错误 */ }
+
+      const scale = 2;
+      const w = bill.offsetWidth;
+      const h = bill.offsetHeight;
+      // 剥离 @media 规则：导出 SVG 视口（794px）会误触发移动端样式，
+      // 导致版式与预览不一致（二维码等元素位置漂移）。导出必须固定使用桌面 A4 版式。
+      const stripMediaQueries = (css) => {
+        let out = '';
+        let i = 0;
+        while (i < css.length) {
+          if (css.startsWith('@media', i)) {
+            while (i < css.length && css[i] !== '{') i++;
+            if (i >= css.length) break;
+            let depth = 1;
+            i++;
+            while (i < css.length && depth > 0) {
+              if (css[i] === '{') depth++;
+              else if (css[i] === '}') depth--;
+              i++;
+            }
+            continue;
+          }
+          out += css[i];
+          i++;
+        }
+        return out;
+      };
+      const styleText = stripMediaQueries(document.getElementById('billStyle').textContent);
+      const clone = bill.cloneNode(true);
+      clone.style.width = w + 'px';
+      clone.style.minHeight = h + 'px';
+      clone.style.margin = '0';
+      clone.style.boxShadow = 'none';
+      clone.style.borderRadius = '0';
+      // 导出 SVG 内没有 <body>，需显式注入与页面 body 相同的基础排版，
+      // 否则默认行高/字号不同会导致整个版面（含二维码位置）发生偏移。
+      clone.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "SimSun", sans-serif';
+      clone.style.fontSize = '13px';
+      clone.style.lineHeight = '1.55';
+      clone.style.color = '#1e293b';
+
+      // HTML 序列化的空元素（如 <img>）必须自闭合，否则 SVG 内嵌后是非法 XML
+      const selfCloseHtml = (html) => html.replace(
+        /<(img|br|hr|input|meta|link)((?:"[^"]*"|'[^']*'|[^'">])*)>/gi,
+        '<$1$2 />'
+      );
+
+      // 2. 图片（二维码/公章）直接内嵌在 SVG 中由浏览器原生渲染，
+      //    版式与预览完全一致，不会出现位置漂移。
+      //    SVG 必须用 data URL（Blob URL 会让画布被跨域污染）。
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+        '<foreignObject width="100%" height="100%">' +
+          '<div xmlns="http://www.w3.org/1999/xhtml">' +
+            '<style>' + styleText + '</style>' +
+            selfCloseHtml(clone.outerHTML) +
+          '</div>' +
+        '</foreignObject></svg>';
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error('账单渲染失败'));
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 3. 整张铺满画布（修复此前只渲染左上角四分之一的问题）
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return canvas;
+    }
+
+    async function exportPNG() {
+      if (!billData) return;
+      try {
+        const canvas = await renderBillToCanvas();
+        const a = document.createElement('a');
+        a.download = '缴费通知单_' + (billData.tenant.room || billData.tenant.name) + '_' + billData.month + '.png';
+        await new Promise((resolve) => {
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              resolve();
+              alert('导出失败，请改用「打印 / 导出 PDF」');
+              return;
+            }
+            a.href = URL.createObjectURL(blob);
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            resolve();
+          }, 'image/png');
+        });
+      } catch (e) {
+        alert('导出失败：' + e.message + '，请改用「打印 / 导出 PDF」');
+      }
+    }
+
+    /* ---------- 复制催款文本 ---------- */
+    function billText() {
+      const d = billData;
+      const s = d.settings, t = d.tenant;
+      const lines = [];
+      lines.push('【' + s.companyName + '】' + d.monthCn + '缴费通知单');
+      lines.push('租户：' + t.name + '（' + (t.room || '未填房号') + '）');
+      lines.push('本期应缴：¥' + fmtMoney(d.total) + '（大写：' + d.totalCn + '）');
+      lines.push('—— 费用明细 ——');
+      for (const f of d.fixedFees) {
+        lines.push('· ' + f.name + '：' + fmtMoney(f.amount) + ' 元（' + f.unit + '）');
+      }
+      for (const m of d.meterRows) {
+        if (m.amount != null) {
+          lines.push('· ' + m.meterName + '：用量 ' + fmtNum(m.usage) + m.unit +
+            ' × ' + fmtMoney(m.price) + ' 元/' + m.unit + ' = ' + fmtMoney(m.amount) + ' 元');
+        }
+      }
+      if (d.missingMeters > 0) {
+        lines.push('（另有 ' + d.missingMeters + ' 只表计本月未抄表，暂未计入金额）');
+      }
+      lines.push('付款截止日期：' + d.dueDate);
+      if (s.bankAccount) {
+        lines.push('收款账户：' + s.accountHolder + '（' + s.bankName + '）' + s.bankAccount);
+      }
+      lines.push('联系电话：' + s.phone);
+      lines.push(s.reminderNote);
+      return lines.join('\n');
+    }
+
+    async function copyBillText() {
+      if (!billData) return;
+      const text = billText();
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('催款文本已复制，可直接粘贴到微信发送给租户。');
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        alert('催款文本已复制，可直接粘贴到微信发送给租户。');
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

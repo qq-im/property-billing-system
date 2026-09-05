@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: property-billing-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-billing_root}
+      MYSQL_DATABASE: ${DB_NAME:-property_billing}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  billing:
+    build: .
+    container_name: property-billing
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD:-billing_root}
+      - DB_NAME=${DB_NAME:-property_billing}
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
+      - DEFAULT_PASSWORD=${DEFAULT_PASSWORD:-admin123}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
