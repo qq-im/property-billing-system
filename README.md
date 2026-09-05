@@ -2,6 +2,10 @@
 
 物业与租户综合账单管理系统，支持账号登录、MySQL 数据库存储、Docker 一键部署。
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/juntiy/property-billing-system)
+
+> 点击上方按钮可一键部署到 Render（免费），但需要先 fork/复制代码到你自己的 GitHub 仓库。
+
 ## 主要功能
 
 - 工作台统计、合同临期提醒
@@ -17,7 +21,7 @@
 - 后端：Node.js 20+
 - 数据库：MySQL 8.0（推荐）/ SQLite（本地测试）
 - 认证：JWT + bcrypt
-- 部署：Docker / Docker Compose
+- 部署：Docker / Docker Compose / Render
 
 ## 本地快速体验（SQLite）
 
@@ -29,7 +33,7 @@ npm install
 node server.js
 
 # 3. 访问
-http://localhost:3000
+http://localhost:3000/login.html
 
 # 默认账号：admin
 # 默认密码：admin123
@@ -43,7 +47,7 @@ http://localhost:3000
 
 ```bash
 # 1. 克隆代码到服务器
-git clone https://github.com/juntiy/property-billing-system.git
+git clone https://github.com/你的用户名/property-billing-system.git
 cd property-billing-system
 
 # 2. 编辑环境变量
@@ -73,7 +77,17 @@ docker compose up -d
 http://服务器IP:3000
 ```
 
-### 方式二：宝塔面板 / 云服务器手动部署
+### 方式二：Render 一键部署（免费）
+
+1. Fork 本仓库到你自己的 GitHub 账号
+2. 注册 [PlanetScale](https://planetscale.com) 免费 MySQL 数据库
+3. 点击 README 顶部的 **Deploy to Render** 按钮
+4. 在 Render 后台填写 PlanetScale 数据库连接信息
+5. 等待部署完成，获得 `https://xxx.onrender.com` 网址
+
+详细步骤见 [DEPLOY.md](./DEPLOY.md)。
+
+### 方式三：宝塔面板 / 云服务器手动部署
 
 #### 1. 服务器准备
 
